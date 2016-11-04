@@ -3,8 +3,8 @@
 // @namespace    https://www.brchan.org/
 // @version      1.0.0
 // @author       pngcrypt
-// @include      http*://*.brchan.org/mod.php?/settings/*
-// @match        http*://*.brchan.org/mod.php?/settings/*
+// @include      http*://www.brchan.org/mod.php?/settings/*
+// @include      http*://brchan.org/mod.php?/settings/*
 // @grant        none
 // ==/UserScript==
 
