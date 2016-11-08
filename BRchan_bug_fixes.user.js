@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         BRchan bug fixes
 // @namespace    https://www.brchan.org/
-// @version      1.0.0
+// @version      1.0.1
 // @author       pngcrypt
 // @include      http*://www.brchan.org/mod.php?/settings/*
 // @include      http*://brchan.org/mod.php?/settings/*
 // @grant        none
+// @run-at       document-idle
 // ==/UserScript==
 
 (function() {
@@ -18,7 +19,6 @@
     var inputs_del = [
         "meta_noindex"
     ];
-
     var inp,el;
 
     // remove buggy inputs
@@ -33,11 +33,11 @@
     // add new inputs
     inp = document.querySelector('form');
     for(let i of inputs_add) {
-        let el = document.createElement('input');
+        el = document.createElement('input');
         el.type = 'hidden';
         el.name = i[0];
         el.value = i[1];
-        inp.append(el);
+        inp.appendChild(el);
     }
 
     // remove dup filters
