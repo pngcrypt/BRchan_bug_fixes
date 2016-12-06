@@ -11,36 +11,61 @@
 
 
 // some fixes for some pages (by url-regex)
-(function() {
+(function(ctx) {
 'use strict';
 
-	var msg = function() {
-		window.console.log.apply(window.console, ["[BRfix]"].concat(Array.from(arguments)));
-	};
+	var $ = ctx.$,
+		document = ctx.document,
+		/* 
+			url_match = [
+				[url-regex1, 'fn1'],
+				...
+				[url-regexN, 'fnN'] 
+			]
 
-	var storage_name = "BRbugFix",
-		storage = {},
-		fn_url='',
-
-		// url regex: if matched function will be called: fixes.$1() -- where $1 - is 1st catch-group of regex
+			if url-regex is matched function will be called:
+				- if 'fnN' is defined: fixes['fnN']()
+				- or fixes[$1]() -- where $1 - is 1st catch-group of regex
+		*/
 		url_match = [
-			[/mod\.php\?\/(settings)\//],
+			[/^mod\.php\?\/(settings)\//],
 			[/\/(res)\//],
 			[/\/(ban)(&delete)?\//],
 			[/^(report)\.php/]
-		];
+		],
+		storage_name = "BRbugFix", // name of localStorage item
+		storage, // object of storage localStorage[storage_name]
+		page_name, // name of current page (1st catch-group of regex || name of function ('fnN') || part of regex-matched)
+		page_storage, // object of current page storage (if loaded) :: storage[page_name]
+		fn_url='';
 
-	var loadStorage = function() {
-		try {
-			storage = JSON.parse(localStorage.getItem(storage_name));
-		} catch(err) {}
-		if(!storage)
-			storage = {};
+
+	var msg = function() {
+		ctx.console.log.apply(ctx.console, ["[BRfix]"].concat(Array.from(arguments)));
+	};
+
+	var loadStorage = function(force) {
+		page_storage = {};
+		if(!storage || typeof(storage) != 'object') {
+			try {
+				storage = JSON.parse(ctx.localStorage.getItem(storage_name));
+			} catch(err) {}
+			if(!storage || typeof(storage) != 'object')
+				storage = {};
+		}
+		if(!page_name) {
+			msg('No page_name');
+			return;
+		}
+		if(!(page_name in storage)) {
+			storage[page_name] = {};
+		}
+		page_storage = storage[page_name];
 	};
 
 	var saveStorage = function() {
 		try {
-			localStorage.setItem(storage_name, JSON.stringify(storage));
+			ctx.localStorage.setItem(storage_name, JSON.stringify(storage));
 		} catch(err) {
 			msg('ERROR storage saving');
 		}
@@ -65,13 +90,12 @@
 			'def-valN' - default value (if not found in storage)
 		*/
 
-		if(!storage[fn_url]) 
-			storage[fn_url] = {};
-		if(!storage[fn_url].forms)
-			storage[fn_url].forms = {};
+		loadStorage();
+		if(!page_storage.forms)
+			page_storage.forms = {};
 
-		var st_forms = storage[fn_url].forms,
-			val, form, field;
+		var val, form, field,
+			st_forms = page_storage.forms;
 
 		for(let f in forms) {
 			form = document.querySelector(f);
@@ -115,18 +139,18 @@
 			msg("saveForm: Form not found or it is not form: ", f);
 			return;
 		}
-		var st_form = storage[fn_url];
-		if(!st_form || !st_form.forms || !(form in st_form.forms)) {
+		loadStorage();		
+		if(!page_storage || !page_storage.forms || !(form in page_storage.forms)) {
 			msg("saveForm: Form not was loaded:", f);
 			return;			
 		}
-		st_form = st_form.forms[form];
+		var st_form = page_storage.forms[form];
 		var old_submit = f.onsubmit;
 		f.onsubmit = function(e) {
 			if(typeof(fn) == 'function')
 				fn(e);
 			else {
-				let v;
+				var v;
 				for(let fl in st_form) {
 					v = f.querySelector(fl);
 					if(v && ('value' in v))
@@ -193,7 +217,8 @@
 		//----------------------
 		{
 			// delete file name before posting
-			window.$(document).on('ajax_before_post', function(e, formData) {
+			if(!$) return; // jQ check
+			$(document).on('ajax_before_post', function(e, formData) {
 				for(let n=1; n<10; n++) {				
 					let fname = 'file' + (n < 2 ? '' : n);
 					let files = formData.getAll(fname);
@@ -236,24 +261,28 @@
 	};
 
 
-	var url = document.head.querySelector('title');
-	if(url && url.innerText.match('CloudFlare')) {
-		return;
-	}
-
-	url = window.location.pathname.substr(1) + window.location.search;
-	for(let u of url_match) {
-		let m = url.match(u[0]);
-		if(m) {
-			fn_url = m[1] || u[1];
-			if(fn_url && (fn_url in fixes)) {
-				msg(u[0], ': '+fn_url+'()');
-				loadStorage();
-				fixes[fn_url]();
-			}
-			else
-				msg('ERROR: no function for ', u[0]);
+	(function() {
+		var url = document.head.querySelector('title');
+		if(url && url.innerText.match('CloudFlare')) {
+			return;
 		}
-	}
+		url = ctx.location.pathname.substr(1) + ctx.location.search;
+		var m,fn,fst=0;
+		for(let u of url_match) {
+			m = url.match(u[0]);
+			if(m) {
+				if(!(fst++)) msg('URL:', url);				
+				fn = u[1] || m[1];
+				page_name = m[1] || u[1] || m[0];
+				// msg('Fn:', fn, '; page_name:', page_name);
+				if(fn && (fn in fixes)) {
+					msg('MATCH:', u[0], ':>', fn+'()');
+					fixes[fn]();
+				}
+				else
+					msg('ERROR: no function for', u[0], '(',fn,')');
+			}
+		}
+	})();
 
-})();
+})(window);
