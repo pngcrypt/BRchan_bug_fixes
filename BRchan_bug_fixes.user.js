@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         BRchan bug fixes
 // @namespace    https://www.brchan.org/
-// @version      1.1.0
+// @version      1.1.1
 // @author       pngcrypt
 // @include      http*://www.brchan.org/*
 // @include      http*://brchan.org/*
@@ -113,7 +113,10 @@
 				if(fl in st_forms[f])
 					field.value = st_forms[f][fl];
 				else {
-					field.value = st_forms[f][fl] = forms[f][fl];
+					if(forms[f][fl] !== null)
+						field.value = st_forms[f][fl] = forms[f][fl];
+					else
+						st_forms[f][fl] = field.value; // get default value from form
 				}
 			}
 		}
@@ -241,6 +244,7 @@
 			loadForms({
 				'form': {
 					'#reason': '',
+					'#message': null,
 					'#length': ''
 				}
 			});
