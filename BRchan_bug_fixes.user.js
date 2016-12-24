@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         BRchan bug fixes
 // @namespace    https://www.brchan.org/
-// @version      1.1.1
+// @version      1.1.2
 // @author       pngcrypt
 // @include      http*://www.brchan.org/*
 // @include      http*://brchan.org/*
 // @grant        none
-// @run-at       document-end
+// @run-at       document-idle
+// @nocompat     Chrome
 // ==/UserScript==
 
 
@@ -16,11 +17,11 @@
 
 	var $ = ctx.$,
 		document = ctx.document,
-		/* 
+		/*
 			url_match = [
 				[url-regex1, 'fn1'],
 				...
-				[url-regexN, 'fnN'] 
+				[url-regexN, 'fnN']
 			]
 
 			if url-regex is matched function will be called:
@@ -142,10 +143,10 @@
 			msg("saveForm: Form not found or it is not form: ", f);
 			return;
 		}
-		loadStorage();		
+		loadStorage();
 		if(!page_storage || !page_storage.forms || !(form in page_storage.forms)) {
 			msg("saveForm: Form not was loaded:", f);
-			return;			
+			return;
 		}
 		var st_form = page_storage.forms[form];
 		var old_submit = f.onsubmit;
@@ -170,7 +171,7 @@
 	// fixes functions
 	var fixes = {
 		//----------------------
-		settings: function() 
+		settings: function()
 		//----------------------
 		{
 			var inputs_add = [
@@ -222,7 +223,7 @@
 			// delete file name before posting
 			if(!$) return; // jQ check
 			$(document).on('ajax_before_post', function(e, formData) {
-				for(let n=1; n<10; n++) {				
+				for(let n=1; n<10; n++) {
 					let fname = 'file' + (n < 2 ? '' : n);
 					let files = formData.getAll(fname);
 					if(!files.length)
@@ -238,7 +239,7 @@
 		},
 
 		//----------------------
-		ban: function() 
+		ban: function()
 		//----------------------
 		{
 			loadForms({
@@ -252,7 +253,7 @@
 		},
 
 		//----------------------
-		report: function() 
+		report: function()
 		//----------------------
 		{
 			loadForms({
@@ -275,7 +276,7 @@
 		for(let u of url_match) {
 			m = url.match(u[0]);
 			if(m) {
-				if(!(fst++)) msg('URL:', url);				
+				if(!(fst++)) msg('URL:', url);
 				fn = u[1] || m[1];
 				page_name = m[1] || u[1] || m[0];
 				// msg('Fn:', fn, '; page_name:', page_name);
